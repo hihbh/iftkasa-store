@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IFTKASA GARAGE-System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #c026d3; --bg: #f8fafc; --white: #ffffff; --danger: #ef4444; --success: #22c55e; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        body { background: var(--bg); padding-bottom: 90px; color: #1e293b; }
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--accent); }
+        .container { padding: 15px; max-width: 700px; margin: auto; }
+        .card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; }
+        
+        /* Stats Styling */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: white; padding: 15px; border-radius: 10px; text-align: center; border-bottom: 4px solid var(--accent); }
+        .stat-box.full { grid-column: span 2; border-bottom-color: var(--primary); }
+        .stat-box h2 { font-size: 1.1rem; color: var(--primary); }
+        .stat-label { font-size: 0.7rem; color: #64748b; font-weight: 600; text-transform: uppercase; }
+
+        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; }
+        .btn-main { background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; }
+        .btn-accent { background: var(--accent); color: white; border: none; font-weight: 600; }
+        .btn-del { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.75rem; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #f1f5f9; }
+        th { background: #f8fafc; color: #64748b; }
+        
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #e2e8f0; padding: 10px 0; z-index: 100; }
+        .nav-item { flex: 1; text-align: center; font-size: 0.65rem; color: #94a3b8; cursor: pointer; }
+        .nav-item.active { color: var(--accent); font-weight: bold; }
+        .hidden { display: none; }
+        
+        .report-section { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); }
+    </style>
+</head>
+<body>
+
+<header><h1 style="font-size: 1.4rem;">IFTKASA <span style="color:var(--accent)">GARAGE</span></h1></header>
+
+<div class="container">
+    <div id="view-home" class="view">
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-label">Total Sales</div>
+                <h2 id="total-sales">0</h2>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Profit</div>
+                <h2 id="total-profit" style="color:var(--success)">0</h2>
+            </div>
+            <div class="stat-box full">
+                <div class="stat-label">Total Orders</div>
+                <h2 id="total-orders" style="color:var(--accent)">0</h2>
+            </div>
+        </div>
+        <div class="card">
+            <h3>Recent Sales & Repairs</h3>
+            <div style="overflow-x: auto;">
+                <table id="recent-table">
+                    <thead><tr><th>Customer</th><th>Phone</th><th>Fix/Part</th><th>Price</th><th>X</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-pos" class="view hidden">
+        <div class="card">
+            <h3>New Maintenance Order</h3>
+            <input type="text" id="cust-name" placeholder="Customer Name">
+            <input type="text" id="cust-phone" placeholder="Phone Number">
+            <label>Select Part (From Stock):</label>
+            <select id="pos-select"></select>
+            <label>Repair Details / Extra Info:</label>
+            <textarea id="service-desc" placeholder="Describe the fix here (Mandatory if No Part is selected)"></textarea>
+            <input type="number" id="pos-price" placeholder="Total Order Price">
+            <button class="btn-accent" onclick="confirmOrder()">Confirm & Save Order</button>
+        </div>
+    </div>
+
+    <div id="view-stock" class="view hidden">
+        <div class="card">
+            <h3>Inventory Management</h3>
+            <input type="text" id="sk-name" placeholder="Part Name">
+            <input type="number" id="sk-buy" placeholder="Cost Price (Buy)">
+            <input type="number" id="sk-sell" placeholder="Selling Price">
+            <input type="number" id="sk-qty" placeholder="Quantity">
+            <button class="btn-main" onclick="saveProduct()">Add to Stock</button>
+        </div>
+        <div class="card">
+            <table id="stock-table">
+                <thead><tr><th>Name</th><th>Stock</th><th>Price</th><th>Action</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="view-customers" class="view hidden">
+        <div class="card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3>Customers Database</h3>
+                <button onclick="downloadAllCustomers()" class="btn-main" style="width: auto; padding: 5px 10px; font-size: 0.7rem;">📥 PDF</button>
+            </div>
+            <table id="cust-table">
+                <thead><tr><th>Name</th><th>Phone</th><th>Details</th><th>Price</th><th>Action</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="view-reports" class="view hidden">
+        <div class="card" id="printable-report">
+            <h3>Financial Performance</h3>
+            <div class="report-section"><h4>Today</h4><div style="display:flex; justify-content: space-between"><span id="rep-day-sales" style="font-weight:bold">0</span><span style="color:var(--success); font-weight:bold">Profit: <span id="rep-day-profit">0</span></span></div></div>
+            <div class="report-section"><h4>This Week</h4><div style="display:flex; justify-content: space-between"><span id="rep-week-sales" style="font-weight:bold">0</span><span style="color:var(--success); font-weight:bold">Profit: <span id="rep-week-profit">0</span></span></div></div>
+            <div class="report-section"><h4>This Month</h4><div style="display:flex; justify-content: space-between"><span id="rep-month-sales" style="font-weight:bold">0</span><span style="color:var(--success); font-weight:bold">Profit: <span id="rep-month-profit">0</span></span></div></div>
+        </div>
+        <button class="btn-accent" onclick="showView('analytics')">📊 View Sales by Part</button>
+        <button class="btn-main" onclick="downloadReport()" style="margin-top: 5px;">📥 Download PDF Report</button>
+    </div>
+
+    <div id="view-analytics" class="view hidden">
+        <div class="card">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom:10px;"><h3>Part Analytics</h3><button onclick="showView('reports')" class="btn-main" style="width:auto; padding:5px 10px;">Back</button></div>
+            <table id="analytics-table">
+                <thead><tr><th>Part Name</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="nav-bar">
+    <div class="nav-item active" onclick="showView('home')">🏠<br>Home</div>
+    <div class="nav-item" onclick="showView('pos')">🛠️<br>New Fix</div>
+    <div class="nav-item" onclick="showView('customers')">👥<br>Customers</div>
+    <div class="nav-item" onclick="showView('stock')">📦<br>Stock</div>
+    <div class="nav-item" onclick="showView('reports')">📊<br>Reports</div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('iftkasa_db')) || { products: [], transactions: [] };
+
+    function sync() { localStorage.setItem('iftkasa_db', JSON.stringify(db)); render(); }
+
+    function showView(v) {
+        document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+        document.getElementById('view-' + v).classList.remove('hidden');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navs = ['home', 'pos', 'customers', 'stock', 'reports'];
+        if(navs.includes(v)) document.querySelectorAll('.nav-item')[navs.indexOf(v)].classList.add('active');
+        render();
+    }
+
+    function saveProduct() {
+        const p = { id: Date.now(), name: document.getElementById('sk-name').value, buy: +document.getElementById('sk-buy').value || 0, sell: +document.getElementById('sk-sell').value || 0, qty: +document.getElementById('sk-qty').value || 0, totalSold: 0, totalRevenue: 0 };
+        if(p.name) { db.products.push(p); sync(); alert("Added!"); }
+    }
+
+    function confirmOrder() {
+        const name = document.getElementById('cust-name').value;
+        const phone = document.getElementById('cust-phone').value;
+        const details = document.getElementById('service-desc').value;
+        const price = +document.getElementById('pos-price').value;
+        const prodId = document.getElementById('pos-select').value;
+
+        if(!name || !price) return alert("Fill Name and Price");
+        if(prodId === "none" && !details) return alert("Please describe the repair!");
+
+        let cost = 0;
+        let displayFix = details || "Spare Part Fix";
+
+        if(prodId !== "none") {
+            const p = db.products.find(x => x.id == prodId);
+            if(p && p.qty > 0) {
+                p.qty -= 1;
+                p.totalSold = (p.totalSold || 0) + 1;
+                p.totalRevenue = (p.totalRevenue || 0) + price;
+                cost = p.buy;
+                displayFix = p.name + (details ? " - " + details : "");
+            } else return alert("Out of Stock!");
+        }
+
+        db.transactions.push({ id: Date.now(), customer: name, phone: phone, repairDetails: displayFix, total: price, profit: price - cost, timestamp: new Date().getTime(), date: new Date().toLocaleDateString() });
+        sync(); alert("Saved!"); showView('home');
+        // Clear fields
+        document.getElementById('cust-name').value = '';
+        document.getElementById('cust-phone').value = '';
+        document.getElementById('service-desc').value = '';
+        document.getElementById('pos-price').value = '';
+    }
+
+    function render() {
+        const sBody = document.querySelector('#stock-table tbody');
+        const posSel = document.getElementById('pos-select');
+        sBody.innerHTML = ''; posSel.innerHTML = '<option value="none">No Part (Service Only)</option>';
+        db.products.forEach(p => {
+            sBody.innerHTML += `<tr><td>${p.name}</td><td>${p.qty}</td><td>${p.sell}</td><td><button class="btn-del" onclick="deleteP(${p.id})">Del</button></td></tr>`;
+            posSel.innerHTML += `<option value="${p.id}">${p.name} (${p.qty})</option>`;
+        });
+
+        let tS=0, tP=0, dS=0, dP=0, wS=0, wP=0, mS=0, mP=0;
+        const now = new Date().getTime();
+        const rBody = document.querySelector('#recent-table tbody');
+        const cBody = document.querySelector('#cust-table tbody');
+        rBody.innerHTML = ''; cBody.innerHTML = '';
+
+        db.transactions.slice().reverse().forEach((t, i) => {
+            tS += t.total; tP += t.profit;
+            const diff = (now - t.timestamp) / (1000 * 60 * 60 * 24);
+            if(diff < 1) { dS += t.total; dP += t.profit; }
+            if(diff < 7) { wS += t.total; wP += t.profit; }
+            if(diff < 30) { mS += t.total; mP += t.profit; }
+            const row = `<tr><td>${t.customer}</td><td>${t.phone}</td><td>${t.repairDetails}</td><td>${t.total}</td><td><button class="btn-del" onclick="deleteT(${t.id})">❌</button></td></tr>`;
+            if(i < 8) rBody.innerHTML += row;
+            cBody.innerHTML += row;
+        });
+
+        document.getElementById('total-sales').innerText = tS.toFixed(0);
+        document.getElementById('total-profit').innerText = tP.toFixed(0);
+        document.getElementById('total-orders').innerText = db.transactions.length;
+        
+        document.getElementById('rep-day-sales').innerText = dS.toFixed(0);
+        document.getElementById('rep-day-profit').innerText = dP.toFixed(0);
+        document.getElementById('rep-week-sales').innerText = wS.toFixed(0);
+        document.getElementById('rep-week-profit').innerText = wP.toFixed(0);
+        document.getElementById('rep-month-sales').innerText = mS.toFixed(0);
+        document.getElementById('rep-month-profit').innerText = mP.toFixed(0);
+
+        const aBody = document.querySelector('#analytics-table tbody');
+        aBody.innerHTML = '';
+        db.products.forEach(p => aBody.innerHTML += `<tr><td>${p.name}</td><td>${p.totalSold || 0}</td><td>${(p.totalRevenue || 0).toFixed(0)}</td></tr>`);
+    }
+
+    function deleteP(id) { if(confirm("Delete Part?")) { db.products = db.products.filter(x => x.id != id); sync(); } }
+    function deleteT(id) { if(confirm("Delete Order?")) { db.transactions = db.transactions.filter(x => x.id != id); sync(); } }
+    function downloadReport() { html2pdf().from(document.getElementById('printable-report')).save('Garage_Report.pdf'); }
+    function downloadAllCustomers() { html2pdf().from(document.getElementById('cust-table')).save('Customers.pdf'); }
+
+    render();
+</script>
+</body>
+</html>
