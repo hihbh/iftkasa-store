@@ -17,26 +17,18 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
 :root{
 --main:#ff7a1a;
 --main2:#ff9b4a;
---bg:#0d0d0d;
---card:#111;
+--bg:#080808;
+--card:#121212;
 --text:#fff;
 }
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Montserrat',sans-serif;
--webkit-tap-highlight-color:transparent;
-}
-
 body{
-background:var(--bg);
+background:
+radial-gradient(circle at top,#1a1a1a,#080808);
 color:white;
-padding-bottom:90px;
+padding-bottom:100px;
 overflow-x:hidden;
 }
-
 /* LOADER */
 
 #page-loader{
@@ -107,19 +99,40 @@ font-size:15px;
 
 .promo-banner{
 width:100%;
-height:200px;
+height:260px;
+border-radius:0 0 35px 35px;
 overflow:hidden;
 position:relative;
+margin-bottom:15px;
+box-shadow:0 10px 40px rgba(0,0,0,.4);
 }
 
-.banner-track{
-display:flex;
-height:100%;
-transition:.5s;
+.promo-banner::after{
+content:"Premium Phone Cases";
+position:absolute;
+bottom:30px;
+left:20px;
+font-size:28px;
+font-weight:700;
+color:white;
+z-index:10;
+text-shadow:0 5px 20px rgba(0,0,0,.6);
+}
+
+.promo-banner::before{
+content:"";
+position:absolute;
+inset:0;
+background:linear-gradient(
+180deg,
+transparent,
+rgba(0,0,0,.65)
+);
+z-index:5;
 }
 
 .banner-img{
-min-width:100%;
+width:100%;
 height:100%;
 object-fit:cover;
 }
@@ -136,13 +149,22 @@ padding:15px;
 /* CARD */
 
 .card{
-background:var(--card);
-border-radius:24px;
+background:rgba(255,255,255,.04);
+backdrop-filter:blur(15px);
+border:1px solid rgba(255,255,255,.06);
+border-radius:28px;
 padding:12px;
-position:relative;
 overflow:hidden;
-transition:.3s;
-animation:fadeUp .5s;
+position:relative;
+transition:.35s;
+box-shadow:
+0 10px 25px rgba(0,0,0,.35);
+}
+
+.card:hover{
+transform:translateY(-8px);
+box-shadow:
+0 20px 40px rgba(0,0,0,.5);
 }
 
 @keyframes fadeUp{
@@ -224,37 +246,56 @@ box-shadow:0 0 15px rgba(255,122,26,.4);
 border-color:var(--main);
 box-shadow:0 0 10px rgba(255,122,26,.3);
 }
+.img-box{
+height:230px;
+border-radius:22px;
+overflow:hidden;
+background:#1a1a1a;
+}
+
 .img-box img{
 width:100%;
 height:100%;
 object-fit:cover;
+transition:.5s;
 }
 
-.img-box:hover img{
-transform:scale(1.08);
+.card:hover .img-box img{
+transform:scale(1.1);
 }
-
 .product-name{
+font-size:16px;
+font-weight:700;
 margin-top:12px;
-font-weight:600;
-font-size:15px;
+line-height:1.4;
 }
 
 .product-price{
-margin-top:5px;
-color:var(--main);
-font-weight:bold;
+display:inline-block;
+margin-top:10px;
+padding:8px 14px;
+border-radius:30px;
+background:linear-gradient(
+135deg,
+var(--main),
+var(--main2)
+);
+color:white;
+font-weight:700;
+font-size:14px;
 }
 
 .fav-btn{
-position:absolute;
-top:14px;
-right:14px;
-font-size:23px;
-cursor:pointer;
-z-index:20;
+width:42px;
+height:42px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(0,0,0,.4);
+backdrop-filter:blur(10px);
+border-radius:50%;
+font-size:22px;
 }
-
 /* VIEWS */
 
 .view-section{
@@ -575,10 +616,10 @@ oninput="searchProducts(this.value)">
 <div class="banner-track"
 id="banner-track">
 
-<img src="WhatsApp Image 2026-03-31 at 10.52.28 PM.jpeg"
+<img src="LOGO.jpg"
 class="banner-img">
 
-<img src="WhatsApp Image 2026-03-30 at 12.26.11 AM.jpeg"
+<img src="s c.jpg"
 class="banner-img">
 
 </div>
@@ -1025,7 +1066,9 @@ images:[
 's b.jpg'
 
 ]
+
 },
+
 
 {
 id:2,
