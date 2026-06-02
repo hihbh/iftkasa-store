@@ -191,12 +191,43 @@ align-items:center;
 justify-content:center;
 cursor:pointer;
 }
+.checkout-box select{
+width:100%;
+padding:16px;
+background:#1a1a1a;
+border:2px solid #222;
+border-radius:18px;
+color:white;
+font-size:15px;
+font-weight:600;
+outline:none;
+cursor:pointer;
+transition:.3s;
+appearance:none;
 
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='%23ff7a1a' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+background-repeat:no-repeat;
+background-position:right 15px center;
+padding-right:45px;
+}
+
+.checkout-box select:hover{
+border-color:var(--main);
+}
+
+.checkout-box select:focus{
+border-color:var(--main);
+box-shadow:0 0 15px rgba(255,122,26,.4);
+}
+
+.checkout-box select:focus{
+border-color:var(--main);
+box-shadow:0 0 10px rgba(255,122,26,.3);
+}
 .img-box img{
 width:100%;
-height:100;
+height:100%;
 object-fit:cover;
-transition:.4s;
 }
 
 .img-box:hover img{
@@ -657,15 +688,7 @@ Complete Your Order 🛍️
 
 <div class="checkout-box">
 <input type="text" id="cust-name" placeholder="Full Name">
-<input
-type="text"
-id="phone-type"
-placeholder="Phone Type">
 
-<input
-type="text"
-id="confirm-phone-type"
-placeholder="Confirm Phone Type">
 <input type="tel"
 id="cust-phone"
 placeholder="Phone Number">
@@ -673,7 +696,9 @@ placeholder="Phone Number">
 <input type="tel"
 id="cust-phone2"
 placeholder="Confirm Phone Number">
+<select id="governorate"></select>
 
+<select id="area"></select>
 <input type="text"
 id="cust-address"
 placeholder="Address">
@@ -686,7 +711,14 @@ placeholder="Nearest Landmark">
 id="cust-apartment"
 placeholder="Apartment Number">
 
-
+<div id="invoice-box"
+style="
+background:#111;
+padding:15px;
+border-radius:15px;
+margin-top:15px;
+">
+</div>
 <button class="btn-main btn-orange"
 onclick="sendOrderToWhatsApp()">
 
@@ -833,11 +865,20 @@ onclick="showView('favorites',this)">
 </nav>
 
 <script>
+    
+    
 /* START APP */
+
 
 window.onload = function(){
 
 renderHome();
+
+loadGovernorates();
+
+updateCartBadge();
+
+renderInvoice();
 
 setTimeout(() => {
 
@@ -854,6 +895,126 @@ loader.style.display = "none";
 },1200);
 
 };
+let shippingPrice = 0;
+
+const shippingData = {
+
+"Cairo":{
+"Maadi":50,
+"Nasr City":60,
+"Heliopolis":65
+},
+
+"Giza":{
+"Dokki":55,
+"Faisal":60,
+"Haram":65
+},
+
+"Alexandria":{
+"Miami":80,
+"Sidi Gaber":85
+}
+
+};
+
+let cart =
+JSON.parse(localStorage.getItem("cart")) || [];
+
+let favorites =
+JSON.parse(localStorage.getItem("favorites")) || [];
+
+let currentProduct = null;
+let currentSlide = 0;
+let customOrderMode = false;
+
+/* ================= SAVE ================= */
+
+function saveData(){
+
+localStorage.setItem("cart",JSON.stringify(cart));
+localStorage.setItem("favorites",JSON.stringify(favorites));
+
+}
+
+/* ================= INIT ================= */
+
+
+/* ================= GOVERNORATES ================= */
+
+const govSelect =
+document.getElementById("governorate");
+
+const areaSelect =
+document.getElementById("area");
+
+function loadGovernorates(){
+
+govSelect.innerHTML = "";
+
+Object.keys(shippingData).forEach(g=>{
+
+govSelect.innerHTML +=
+`<option value="${g}">${g}</option>`;
+
+});
+
+loadAreas();
+}
+
+function loadAreas(){
+
+areaSelect.innerHTML = "";
+
+Object.keys(
+shippingData[govSelect.value]
+).forEach(a=>{
+
+areaSelect.innerHTML +=
+`<option value="${a}">${a}</option>`;
+
+});
+
+updateShipping();
+}
+
+function updateShipping(){
+
+shippingPrice =
+shippingData[
+govSelect.value
+][
+areaSelect.value
+] || 0;
+
+renderInvoice();
+
+}
+setTimeout(() => {
+
+const loader =
+document.getElementById("page-loader");
+
+loader.style.opacity = "0";
+loader.style.pointerEvents = "none";
+
+setTimeout(() => {
+loader.style.display = "none";
+},500);
+
+},1200);
+
+
+/* events */
+
+govSelect?.addEventListener("change",()=>{
+loadAreas();
+});
+
+areaSelect?.addEventListener("change",()=>{
+updateShipping();
+});
+
 const products = [
 
 {
@@ -977,11 +1138,6 @@ images:[
 
 ];
 
-let cart = [];
-let favorites = [];
-let currentProduct = null;
-let currentSlide = 0;
-let customOrderMode = false;
 
 /* RENDER HOME */
 
@@ -1066,7 +1222,9 @@ window.scrollTo({
 top:0,
 behavior:"smooth"
 });
-
+if(id==="checkout"){
+renderInvoice();
+}
 }
 
 /* DETAILS */
@@ -1124,7 +1282,6 @@ document.getElementById('slider-track')
 }
 
 /* CART */
-
 function addToCart(){
 
 const existing =
@@ -1141,17 +1298,20 @@ id:currentProduct.id,
 name:currentProduct.name,
 price:currentProduct.price,
 img:currentProduct.images[0],
-qty:1
+qty:1,
+phoneModel:""
 });
-
 }
 
+saveData();
+
 updateCartBadge();
+
+renderInvoice();
 
 showToast("Added To Cart 🛒");
 
 }
-
 function renderCart(){
 
 const list =
@@ -1198,7 +1358,18 @@ cart.map((item,idx)=>`
 <p style="margin-top:5px;">
 EGP ${item.price}
 </p>
+<select onchange="changePhoneModel(${idx},this.value)">
+    <option value="">Choose Phone</option>
 
+    <option value="iPhone 11" ${item.phoneModel==="iPhone 11"?"selected":""}>iPhone 11</option>
+    <option value="iPhone 12" ${item.phoneModel==="iPhone 12"?"selected":""}>iPhone 12</option>
+    <option value="iPhone 13" ${item.phoneModel==="iPhone 13"?"selected":""}>iPhone 13</option>
+    <option value="iPhone 14" ${item.phoneModel==="iPhone 14"?"selected":""}>iPhone 14</option>
+
+    <option value="Samsung A15" ${item.phoneModel==="Samsung A15"?"selected":""}>Samsung A15</option>
+    <option value="Samsung A25" ${item.phoneModel==="Samsung A25"?"selected":""}>Samsung A25</option>
+    <option value="Samsung A35" ${item.phoneModel==="Samsung A35"?"selected":""}>Samsung A35</option>
+</select>
 <div class="qty-box">
 
 <button onclick="changeQty(${idx},-1)">
@@ -1233,29 +1404,35 @@ function changeQty(index,change){
 cart[index].qty += change;
 
 if(cart[index].qty <= 0){
-
 cart.splice(index,1);
-
 }
+
+saveData();
 
 updateCartBadge();
 
 renderCart();
 
+renderInvoice();
+
 }
+
 
 function removeCart(index){
 
 cart.splice(index,1);
 
+saveData();
+
 updateCartBadge();
 
 renderCart();
 
+renderInvoice();
+
 showToast("Removed ❌");
 
 }
-
 function updateCartBadge(){
 
 const total =
@@ -1281,10 +1458,11 @@ favorites.push(id);
 
 }
 
+saveData();
+
 renderHome();
 
 }
-
 function renderFavs(){
 
 const list =
@@ -1351,6 +1529,8 @@ function removeFav(id){
 favorites =
 favorites.filter(f=>f!==id);
 
+saveData();
+
 renderFavs();
 
 renderHome();
@@ -1397,14 +1577,15 @@ setInterval(nextBanner,4000);
 
 function sendOrderToWhatsApp(){
 
-const name = document.getElementById("cust-name")?.value.trim() || "";
-const phoneType = document.getElementById("phone-type")?.value.trim() || "";
-const confirmPhoneType = document.getElementById("confirm-phone-type")?.value.trim() || "";
-const phone = document.getElementById("cust-phone")?.value.trim() || "";
-const phone2 = document.getElementById("cust-phone2")?.value.trim() || "";
-const address = document.getElementById("cust-address")?.value.trim() || "";
-const mark = document.getElementById("cust-mark")?.value.trim() || "";
-const apartment = document.getElementById("cust-apartment")?.value.trim() || "";
+const name = document.getElementById("cust-name").value.trim();
+const phone = document.getElementById("cust-phone").value.trim();
+const phone2 = document.getElementById("cust-phone2").value.trim();
+const address = document.getElementById("cust-address").value.trim();
+const mark = document.getElementById("cust-mark").value.trim();
+const apartment = document.getElementById("cust-apartment").value.trim();
+
+const governorate = document.getElementById("governorate").value;
+const area = document.getElementById("area").value;
 
 if(
 !name ||
@@ -1412,9 +1593,7 @@ if(
 !phone2 ||
 !address ||
 !mark ||
-!apartment ||
-!phoneType ||
-!confirmPhoneType
+!apartment
 ){
 alert("Please fill all fields");
 return;
@@ -1425,82 +1604,75 @@ alert("Phone numbers do not match");
 return;
 }
 
-if(phoneType !== confirmPhoneType){
-alert("Phone types do not match");
-return;
-}
-
-/* CUSTOMIZE ORDER */
+let subtotal = 0;
+let items = "";
 
 if(customOrderMode){
 
-let message =
-"🎨 NEW CUSTOM DESIGN ORDER\n\n" +
-"👤 Name: " + name + "\n" +
-"📞 Phone: " + phone + "\n" +
-"📱 Phone Type: " + phoneType + "\n" +
-"📍 Address: " + address + "\n" +
-"📌 Landmark: " + mark + "\n" +
-"🏠 Apartment: " + apartment + "\n\n" +
-"💰 Customize Price: 250 EGP";
+subtotal = 250;
 
-window.open(
-"https://wa.me/201118022353?text=" +
-encodeURIComponent(message),
-"_blank"
-);
+items =
+"🎨 CUSTOMIZE ORDER\n" +
+"💰 Price: 250 EGP\n" +
+"📤 Customer will send image after opening WhatsApp\n";
 
+}
+else if(cart.length > 0){
+
+for(let item of cart){
+
+if(!item.phoneModel){
+alert("Please select phone type for all products");
 return;
 }
 
-/* NORMAL ORDER */
+const itemTotal = item.price * item.qty;
 
-let orderItems = [];
-
-if(cart.length > 0){
-
-orderItems = cart;
-
-}else if(currentProduct){
-
-orderItems = [{
-name: currentProduct.name,
-price: currentProduct.price,
-qty: 1
-}];
-
-}else{
-
-alert("No products selected");
-return;
-
-}
-
-let total = 0;
-let items = "";
-
-orderItems.forEach(item=>{
-
-total += item.price * item.qty;
+subtotal += itemTotal;
 
 items +=
 "🛍 Product: " + item.name + "\n" +
-"📱 Phone Type: " + phoneType + "\n" +
+"📱 Phone Model: " + item.phoneModel + "\n" +
 "🔢 Qty: " + item.qty + "\n" +
-"💰 Price: " + item.price + " EGP\n" +
-"------------------\n";
+"💰 Total: " + itemTotal + " EGP\n" +
+"-------------------------\n";
+}
 
-});
+}
+else if(currentProduct){
 
-let message =
+subtotal = currentProduct.price;
+
+items =
+"🛍 Product: " + currentProduct.name + "\n" +
+"🔢 Qty: 1\n" +
+"💰 Price: " + currentProduct.price + " EGP\n";
+
+}
+else{
+alert("No products selected");
+return;
+}
+
+const total = subtotal + shippingPrice;
+
+const message =
 "📦 NEW ORDER\n\n" +
+
 "👤 Name: " + name + "\n" +
 "📞 Phone: " + phone + "\n" +
+
+"🏙 Governorate: " + governorate + "\n" +
+"📌 Area: " + area + "\n" +
 "📍 Address: " + address + "\n" +
 "📌 Landmark: " + mark + "\n" +
 "🏠 Apartment: " + apartment + "\n\n" +
+
 items +
-"💵 Total: " + total + " EGP";
+
+"\n🧾 Subtotal: " + subtotal + " EGP" +
+"\n🚚 Shipping: " + shippingPrice + " EGP" +
+"\n💵 Total: " + total + " EGP";
 
 window.open(
 "https://wa.me/201111474333?text=" +
@@ -1508,8 +1680,139 @@ encodeURIComponent(message),
 "_blank"
 );
 
+cart = [];
+customOrderMode = false;
+
+saveData();
+updateCartBadge();
+renderCart();
+renderInvoice();
+
+showToast("Order Sent ✅");
+
+}
+function renderInvoice(){
+
+const box =
+document.getElementById("invoice-box");
+
+if(!box) return;
+
+let subtotal = 0;
+let itemsHTML = "";
+
+if(cart.length > 0){
+
+cart.forEach(item=>{
+
+const itemTotal =
+item.price * item.qty;
+
+subtotal += itemTotal;
+
+itemsHTML += `
+<div style="
+padding:10px;
+margin-bottom:10px;
+background:#1a1a1a;
+border-radius:10px;
+">
+<p><b>${item.name}</b></p>
+
+<p>
+📱 Phone:
+${item.phoneModel || "Not Selected"}
+</p>
+
+<p>
+🔢 Qty:
+${item.qty}
+</p>
+
+<p>
+💰 Total:
+${itemTotal} EGP
+</p>
+</div>
+`;
+
+});
+}else if(customOrderMode){
+
+subtotal = 250;
+
+itemsHTML = `
+<div style="
+padding:10px;
+margin-bottom:10px;
+background:#1a1a1a;
+border-radius:10px;
+">
+<p><b>🎨 Custom Design</b></p>
+<p>Price: 250 EGP</p>
+</div>
+`;
+
+}
+else if(currentProduct){
+
+subtotal = currentProduct.price;
+
+itemsHTML = `
+<p>
+${currentProduct.name}
+= ${currentProduct.price} EGP
+</p>
+`;
+
+}else{
+
+box.innerHTML = `
+<h3>🧾 Invoice</h3>
+<p>No Products Selected</p>
+`;
+
+return;
+
 }
 
+const total =
+subtotal + shippingPrice;
+
+box.innerHTML = `
+
+<h3 style="margin-bottom:10px;">
+🧾 Invoice
+</h3>
+
+${itemsHTML}
+
+<hr style="margin:10px 0;">
+
+<p>
+Products:
+${subtotal} EGP
+</p>
+
+<p>
+Shipping:
+${shippingPrice} EGP
+</p>
+
+<hr style="margin:10px 0;">
+
+<h3>
+Total:
+${total} EGP
+</h3>
+
+`;
+
+}
+function changePhoneModel(index, value){
+    cart[index].phoneModel = value;
+    saveData();
+}
 </script>
 
 </body>
