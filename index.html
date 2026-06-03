@@ -436,7 +436,55 @@ display:none;
 z-index:99999;
 border:1px solid rgba(255,255,255,.08);
 }
+.best-badge{
+position:absolute;
+top:12px;
+left:-35px;
+background:#ff7a1a;
+color:#fff;
+padding:8px 40px;
+font-size:10px;
+font-weight:700;
+transform:rotate(-45deg);
+z-index:20;
+box-shadow:0 5px 15px rgba(0,0,0,.3);
+}
+.categories-grid{
+padding:15px;
+display:grid;
+grid-template-columns:1fr;
+gap:15px;
+}
 
+.category-card{
+position:relative;
+border-radius:25px;
+overflow:hidden;
+cursor:pointer;
+}
+
+.category-card img{
+width:100%;
+height:260px;
+object-fit:cover;
+display:block;
+}
+
+.cat-title{
+position:absolute;
+bottom:0;
+left:0;
+right:0;
+padding:20px;
+font-size:24px;
+font-weight:700;
+text-align:center;
+color:white;
+background:linear-gradient(
+transparent,
+rgba(0,0,0,.8)
+);
+}
 </style>
 </head>
 
@@ -482,7 +530,54 @@ style="color:var(--main);font-size:20px;"></i>
 </div>
 
 </header>
+<div id="categories-page" class="view-section active">
 
+<div class="categories-grid">
+
+<div class="category-card"
+onclick="openCategory('couples')">
+
+<img src="f r.jpg">
+<div class="cat-title">Couples Cases</div>
+
+</div>
+
+<div class="category-card"
+onclick="openCategory('anime')">
+
+<img src="s w.jpg">
+<div class="cat-title">Anime Cases</div>
+
+</div>
+
+<div class="category-card"
+onclick="openCategory('pattern')">
+
+<img src="s c.jpg">
+<div class="cat-title">Pattern Cases</div>
+
+</div>
+
+<div class="category-card"
+onclick="openCategory('girls')">
+
+<img src="LOGO.jpg">
+<div class="cat-title">Girls Cases</div>
+
+</div>
+
+</div>
+
+</div>
+<div id="products-page" class="view-section">
+<button class="btn-main"
+onclick="goBack()"
+style="margin-bottom:15px;">
+← Back
+</button>
+<div id="product-grid" class="grid"></div>
+
+</div>
 <!-- HOME -->
 
 <div id="home"
@@ -496,38 +591,29 @@ placeholder="Search Products..."
 oninput="searchProducts(this.value)">
 
 </div>
-
 <div class="promo-banner">
 
-<div class="banner-track"
-id="banner-track">
+<div class="banner-track" id="banner-track">
 
-<img src="LOGO.jpg"
-class="banner-img">
-
-<img src="s c.jpg"
-class="banner-img">
+<img src="LOGO.jpg" class="banner-img">
+<img src="s c.jpg" class="banner-img">
 
 </div>
 
 </div>
 
-<div class="grid"
-id="product-grid"></div>
-
-</div>
-
-<!-- DETAILS -->
+<h2 class="section-title">🔥 Mix Products</h2>
+<div id="mix-products" class="grid"></div>
+</div><!-- DETAILS -->
 
 <div id="details"
 class="view-section">
 
 <button class="btn-main"
-onclick="showView('home')"
+onclick="goBack()"
 style="margin-bottom:15px;">
 ← Back
 </button>
-
 <div class="slider-container">
 
 <div class="slider-nav">
@@ -563,10 +649,6 @@ onclick="addToCart()">
 Add To Cart
 </button>
 
-<button class="btn-main btn-orange"
-onclick="showView('checkout')">
-Order Now
-</button>
 
 </div>
 
@@ -806,7 +888,7 @@ loadGovernorates();
 updateCartBadge();
 
 renderInvoice();
-
+renderMixProducts();
 setTimeout(() => {
 
 const loader =
@@ -941,13 +1023,15 @@ loadAreas();
 areaSelect?.addEventListener("change",()=>{
 updateShipping();
 });
-
+let pageHistory = [];
 const products = [
 
 {
 id:1,
 name:"Super man black",
 price:200,
+bestSeller:true,
+mix:true,
 images:[
 's b.jpg'
 
@@ -1014,6 +1098,7 @@ images:[
 id:8,
 name:"Red Bull Classic",
 price:200,
+category:"couples",
 images:[
 'r c.jpg'
 
@@ -1023,6 +1108,7 @@ images:[
 id:9,
 name:"Red Bull",
 price:200,
+category:"pattern",
 images:[
 'r.jpg'
 
@@ -1032,6 +1118,7 @@ images:[
 id:10,
 name:"Fr3on Grap",
 price:200,
+category:"couples",
 images:[
 'f r.jpg'
 
@@ -1041,6 +1128,7 @@ images:[
 id:11,
 name:"Arabic olive",
 price:200,
+category:"girls",
 images:[
 'a o.jpg'
 
@@ -1049,6 +1137,7 @@ images:[
 {
 id:12,
 name:"Mix grap",
+category:"anime",
 price:200,
 images:[
 'm g.jpg'
@@ -1079,6 +1168,12 @@ grid.innerHTML =
 data.map(p=>`
 
 <div class="card">
+
+${p.bestSeller ? `
+<div class="best-badge">
+🔥 BEST SELLER
+</div>
+` : ''}
 
 <div class="fav-btn"
 onclick="toggleFav(${p.id})">
@@ -1124,16 +1219,23 @@ renderHome(filtered);
 
 /* VIEW */
 
-function showView(id,btn){
+function showView(id, btn){
+
+const current =
+document.querySelector('.view-section.active');
+
+if(current && current.id !== id){
+pageHistory.push(current.id);
+}
 
 document.querySelectorAll('.view-section')
-.forEach(v=>v.classList.remove('active'));
+.forEach(v => v.classList.remove('active'));
 
 document.getElementById(id)
 .classList.add('active');
 
 document.querySelectorAll('.nav-btn')
-.forEach(b=>b.classList.remove('active'));
+.forEach(b => b.classList.remove('active'));
 
 if(btn){
 btn.classList.add('active');
@@ -1147,34 +1249,32 @@ if(id==="favorites"){
 renderFavs();
 }
 
+if(id==="checkout"){
+renderInvoice();
+}
+
 window.scrollTo({
 top:0,
 behavior:"smooth"
 });
-if(id==="checkout"){
-renderInvoice();
 }
-}
-
 /* DETAILS */
+
 
 function openDetails(id){
 
-customOrderMode = false;
+currentProduct = products.find(p => p.id == id);
 
-currentProduct =
-products.find(p=>p.id===id);
+if(!currentProduct){
+  alert("Product not found");
+  return;
+}
 
-document.getElementById('det-title')
-.innerText=currentProduct.name;
-
-document.getElementById('det-price')
-.innerText=`EGP ${currentProduct.price}`;
+document.getElementById('det-title').innerText = currentProduct.name;
+document.getElementById('det-price').innerText = `EGP ${currentProduct.price}`;
 
 updateSlider();
-
 showView('details');
-
 }
 function updateSlider(){
 
@@ -1741,6 +1841,73 @@ ${total} EGP
 function changePhoneModel(index, value){
     cart[index].phoneModel = value;
     saveData();
+}
+function openCategory(category){
+
+const filtered = products.filter(
+p => p.category === category
+);
+
+renderHome(filtered);
+
+showView('products-page');
+
+}
+function renderMixProducts(){
+
+const mixGrid =
+document.getElementById("mix-products");
+
+const mixItems =
+products.filter(p => p.mix === true);
+
+mixGrid.innerHTML = mixItems.map(p => `
+
+<div class="card">
+
+<div class="img-box"
+onclick="openDetails(${p.id})">
+
+<img src="${p.images[0]}">
+
+</div>
+
+<div class="product-name">
+${p.name}
+</div>
+
+<div class="product-price">
+EGP ${p.price}
+</div>
+
+</div>
+
+`).join('');
+
+}
+function goBack(){
+
+if(pageHistory.length > 0){
+
+const previous = pageHistory.pop();
+
+document.querySelectorAll('.view-section')
+.forEach(v => v.classList.remove('active'));
+
+document.getElementById(previous)
+.classList.add('active');
+
+}else{
+
+showView('home');
+
+}
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
 }
 </script>
 
