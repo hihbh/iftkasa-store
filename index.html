@@ -1149,6 +1149,8 @@ showView('checkout');
                 name: "Red Bull Classic",
                 price: 200,
                 category: "couples",
+                                phone:true,
+
                 images: [
                     'r c.jpg'
 
@@ -1159,6 +1161,8 @@ showView('checkout');
                 name: "Red Bull",
                 price: 200,
                 category: "pattern",
+                                phone:false,
+
                 images: [
                     'r.jpg'
 
@@ -1248,17 +1252,25 @@ EGP ${p.price}
 
         /* SEARCH */
 
-        function searchProducts(q) {
+       function searchProducts(q) {
 
-            const filtered =
-                products.filter(p =>
-                    p.name.toLowerCase()
-                        .includes(q.toLowerCase())
-                );
+    if(q.trim() === ""){
 
-            renderHome(filtered);
+        showView("home");
+        return;
 
-        }
+    }
+
+    const filtered = products.filter(p =>
+        p.name.toLowerCase()
+        .includes(q.toLowerCase())
+    );
+
+    renderHome(filtered);
+
+    showView("products-page");
+
+}
 
         /* VIEW */
 
